@@ -11,7 +11,10 @@ public interface TileReducer {
 				long lastValue = newValues.getLong(lastIndex);
 
 				if (value == lastValue) {
-					return newValues.set(newValues.size() - 1, value * 2);
+					long combinedValue = value * 2;
+					newValues.set(lastIndex, combinedValue);
+
+					return combinedValue;
 				}
 			}
 
