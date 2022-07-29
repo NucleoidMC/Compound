@@ -1,5 +1,6 @@
 {
 	"game.compound.compound": "Compound",
 	"gameType.compound.compound": "Compound",
+	"text.compound.bar.title": "%s - %d Points",
 	"text.compound.reached_score": "%s reached a score of %d points!"
 }

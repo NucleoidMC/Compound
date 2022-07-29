@@ -33,6 +33,7 @@ import xyz.nucleoid.plasmid.game.GameCloseReason;
 import xyz.nucleoid.plasmid.game.GameOpenContext;
 import xyz.nucleoid.plasmid.game.GameOpenProcedure;
 import xyz.nucleoid.plasmid.game.GameSpace;
+import xyz.nucleoid.plasmid.game.common.GlobalWidgets;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.game.player.PlayerOffer;
@@ -47,6 +48,7 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Di
 	private final CompoundConfig config;
 
 	private final Board board;
+	private final ScoreBar bar;
 	private final VirtualDisplay display;
 
 	private ServerPlayerEntity mainPlayer;
@@ -54,12 +56,13 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Di
 
 	private int ticksUntilClose = -1;
 
-	public CompoundGame(GameSpace gameSpace, ServerWorld world, CompoundConfig config, Board board, VirtualDisplay display) {
+	public CompoundGame(GameSpace gameSpace, ServerWorld world, CompoundConfig config, Board board, GlobalWidgets widgets, VirtualDisplay display) {
 		this.gameSpace = gameSpace;
 		this.world = world;
 		this.config = config;
 
 		this.board = board;
+		this.bar = new ScoreBar(this, widgets);
 		this.display = display;
 	}
 
@@ -95,9 +98,11 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Di
 
 		return context.openWithWorld(worldConfig, (activity, world) -> {
 			board.render();
+
+			GlobalWidgets widgets = GlobalWidgets.addTo(activity);
 			VirtualDisplay display = VirtualDisplay.of(board.getCanvas(), board.getDisplayPos(), Direction.NORTH, 0, false);
 
-			CompoundGame phase = new CompoundGame(activity.getGameSpace(), world, config, board, display);
+			CompoundGame phase = new CompoundGame(activity.getGameSpace(), world, config, board, widgets, display);
 			CompoundGame.setRules(activity);
 
 			// Listeners
@@ -148,6 +153,8 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Di
 
 				if (change != BoardChange.NONE) {
 					this.board.render();
+					this.bar.updateTitle();
+
 					this.sendSound(this.config.soundConfig().slide());
 
 					if (change == BoardChange.MERGE) {
@@ -253,5 +260,9 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Di
 		this.gameSpace.getPlayers().sendMessage(message);
 
 		this.sendSound(this.config.soundConfig().gameEnd());
+	}
+
+	public int getScore() {
+		return this.board.getScore();
 	}
 }
