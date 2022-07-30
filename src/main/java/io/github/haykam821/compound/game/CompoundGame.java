@@ -42,7 +42,7 @@ import xyz.nucleoid.plasmid.game.rule.GameRuleType;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
-public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Disable, GameActivityEvents.Tick, GamePlayerEvents.Remove, GamePlayerEvents.Offer, PlayerDamageEvent, PlayerDeathEvent {
+public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Destroy, GameActivityEvents.Tick, GamePlayerEvents.Remove, GamePlayerEvents.Offer, PlayerDamageEvent, PlayerDeathEvent {
 	private final GameSpace gameSpace;
 	private final ServerWorld world;
 	private final CompoundConfig config;
@@ -107,7 +107,7 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Di
 
 			// Listeners
 			activity.listen(GamePlayerEvents.ADD, phase);
-			activity.listen(GameActivityEvents.DISABLE, phase);
+			activity.listen(GameActivityEvents.DESTROY, phase);
 			activity.listen(GameActivityEvents.TICK, phase);
 			activity.listen(GamePlayerEvents.OFFER, phase);
 			activity.listen(PlayerDamageEvent.EVENT, phase);
@@ -124,7 +124,7 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Di
 	}
 
 	@Override
-	public void onDisable() {
+	public void onDestroy(GameCloseReason reason) {
 		this.display.destroy();
 		this.display.getCanvas().destroy();
 	}
