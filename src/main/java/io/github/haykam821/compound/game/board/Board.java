@@ -2,7 +2,6 @@ package io.github.haykam821.compound.game.board;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 
 import eu.pb4.mapcanvas.api.core.CombinedPlayerCanvas;
 import eu.pb4.mapcanvas.api.core.DrawableCanvas;
@@ -14,6 +13,7 @@ import io.github.haykam821.compound.game.board.tile.TileReducer;
 import net.minecraft.item.FilledMapItem;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.random.Random;
 
 public class Board {
 	private static final int RENDER_SCALE = FilledMapItem.field_30907;

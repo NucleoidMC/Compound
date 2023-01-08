@@ -1,7 +1,5 @@
 package io.github.haykam821.compound.game;
 
-import java.util.Random;
-
 import eu.pb4.mapcanvas.api.utils.VirtualDisplay;
 import io.github.haykam821.compound.game.board.Board;
 import io.github.haykam821.compound.game.board.BoardChange;
@@ -14,17 +12,16 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.fantasy.util.VoidChunkGenerator;
@@ -91,16 +88,21 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 
 	public static GameOpenProcedure open(GameOpenContext<CompoundConfig> context) {
 		CompoundConfig config = context.config();
-		Board board = new Board(config.boardConfig(), new Random());
+		Board board = new Board(config.boardConfig(), context.server().getOverworld().getRandom());
 
 		RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
-			.setGenerator(new VoidChunkGenerator(context.server().getRegistryManager().get(Registry.BIOME_KEY)));
+			.setGenerator(new VoidChunkGenerator(context.server().getRegistryManager().get(RegistryKeys.BIOME)));
 
 		return context.openWithWorld(worldConfig, (activity, world) -> {
 			board.render();
 
 			GlobalWidgets widgets = GlobalWidgets.addTo(activity);
-			VirtualDisplay display = VirtualDisplay.of(board.getCanvas(), board.getDisplayPos(), Direction.NORTH, 0, false);
+			VirtualDisplay display = VirtualDisplay.builder()
+				.canvas(board.getCanvas())
+				.pos(board.getDisplayPos())
+				.direction(Direction.NORTH)
+				.invisible()
+				.build();
 
 			CompoundGame phase = new CompoundGame(activity.getGameSpace(), world, config, board, widgets, display);
 			CompoundGame.setRules(activity);
@@ -256,7 +258,7 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 	private void endGame() {
 		this.ticksUntilClose = this.config.ticksUntilClose();
 
-		Text message = new TranslatableText("text.compound.reached_score", this.mainPlayer.getDisplayName(), this.board.getScore()).formatted(Formatting.GOLD);
+		Text message = Text.translatable("text.compound.reached_score", this.mainPlayer.getDisplayName(), this.board.getScore()).formatted(Formatting.GOLD);
 		this.gameSpace.getPlayers().sendMessage(message);
 
 		this.sendSound(this.config.soundConfig().gameEnd());
