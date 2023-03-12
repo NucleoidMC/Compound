@@ -120,8 +120,8 @@ public class Board {
 		int tilePadding = this.config.tilePadding();
 		int startMultiplier = this.config.tileSize() + tilePadding;
 
-		double x = this.grid.getWidth() * startMultiplier - tilePadding;
-		double y = this.grid.getHeight() * startMultiplier - tilePadding;
+		int x = this.grid.getWidth() * startMultiplier - tilePadding;
+		int y = this.grid.getHeight() * startMultiplier - tilePadding;
 
 		return new BlockPos(x, y, 0);
 	}
