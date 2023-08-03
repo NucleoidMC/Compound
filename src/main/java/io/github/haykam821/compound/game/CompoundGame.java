@@ -97,10 +97,7 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 			board.render();
 
 			GlobalWidgets widgets = GlobalWidgets.addTo(activity);
-			VirtualDisplay display = VirtualDisplay.builder()
-				.canvas(board.getCanvas())
-				.pos(board.getDisplayPos())
-				.direction(Direction.NORTH)
+			VirtualDisplay display = VirtualDisplay.builder(board.getCanvas(), board.getDisplayPos(), Direction.NORTH)
 				.invisible()
 				.build();
 
