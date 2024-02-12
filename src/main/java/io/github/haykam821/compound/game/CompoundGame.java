@@ -22,6 +22,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.GameMode;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.fantasy.util.VoidChunkGenerator;
@@ -88,7 +89,7 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 
 	public static GameOpenProcedure open(GameOpenContext<CompoundConfig> context) {
 		CompoundConfig config = context.config();
-		Board board = new Board(config.boardConfig(), context.server().getOverworld().getRandom());
+		Board board = new Board(config.boardConfig(), Random.createLocal());
 
 		RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
 			.setGenerator(new VoidChunkGenerator(context.server().getRegistryManager().get(RegistryKeys.BIOME)));
@@ -221,7 +222,7 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 	private Entity spawnMount(Vec3d playerPos, ServerPlayerEntity player) {
 		MobEntity mount = EntityType.MULE.create(this.world);
 
-		double y = playerPos.getY() - mount.getMountedHeightOffset() - player.getHeightOffset() + player.getY() - player.getEyeY();
+		double y = playerPos.getY() - player.getRidingOffset(mount) + player.getY() - player.getEyeY();
 		mount.setPos(playerPos.getX(), y, playerPos.getZ());
 		mount.setYaw(this.board.getSpawnAngle());
 

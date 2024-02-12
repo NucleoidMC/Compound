@@ -128,7 +128,7 @@ public class Board {
 
 	public Vec3d getSpawnPos() {
 		BlockPos displayPos = this.getDisplayPos();
-		return new Vec3d(displayPos.getX() / 2d, displayPos.getY() / 2d, displayPos.getY() * -1.2);
+		return new Vec3d(displayPos.getX() / 2d, displayPos.getY() / 2d - 1.2, displayPos.getY() * -1.2);
 	}
 
 	public int getSpawnAngle() {
