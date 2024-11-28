@@ -1,6 +1,7 @@
 package io.github.haykam821.compound.game;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import io.github.haykam821.compound.game.board.BoardConfig;
@@ -13,7 +14,7 @@ public record CompoundConfig(
 	Vec3d spectatorSpawnOffset,
 	int ticksUntilClose
 ) {
-	public static final Codec<CompoundConfig> CODEC = RecordCodecBuilder.create(instance -> {
+	public static final MapCodec<CompoundConfig> CODEC = RecordCodecBuilder.mapCodec(instance -> {
 		return instance.group(
 			BoardConfig.CODEC.optionalFieldOf("board", BoardConfig.DEFAULT).forGetter(CompoundConfig::boardConfig),
 			SoundConfig.CODEC.optionalFieldOf("sounds", SoundConfig.DEFAULT).forGetter(CompoundConfig::soundConfig),
