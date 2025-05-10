@@ -8,6 +8,7 @@ import java.util.function.Function;
 
 import io.github.haykam821.compound.game.board.tile.TilePos;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.PlayerInput;
 
 public enum SlideDirection {
 	UP(BoardGrid::getWidth, reversed(BoardGrid::getColumnPositions)),
@@ -36,16 +37,20 @@ public enum SlideDirection {
 		return this.positionGetter.apply(grid, iteration);
 	}
 
-	public static SlideDirection fromMovement(ServerPlayerEntity player) {
-		if (player.forwardSpeed != 0 && player.sidewaysSpeed != 0) {
+	public static SlideDirection fromPlayer(ServerPlayerEntity player) {
+		return SlideDirection.fromInput(player.getPlayerInput());
+	}
+
+	private static SlideDirection fromInput(PlayerInput input) {
+		if ((input.forward() || input.backward()) && (input.left() || input.right())) {
 			return SlideDirection.MULTIPLE;
-		} else if (player.forwardSpeed > 0) {
+		} else if (input.forward() && !input.backward()) {
 			return SlideDirection.UP;
-		} else if (player.sidewaysSpeed < 0) {
+		} else if (input.right() && !input.left()) {
 			return SlideDirection.RIGHT;
-		} else if (player.forwardSpeed < 0) {
+		} else if (input.backward() && !input.forward()) {
 			return SlideDirection.DOWN;
-		} else if (player.sidewaysSpeed > 0) {
+		} else if (input.left() && !input.right()) {
 			return SlideDirection.LEFT;
 		} else {
 			return null;
