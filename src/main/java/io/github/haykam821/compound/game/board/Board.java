@@ -2,7 +2,10 @@ package io.github.haykam821.compound.game.board;
 
 import java.util.List;
 import java.util.Optional;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.phys.Vec3;
 import eu.pb4.mapcanvas.api.core.CombinedPlayerCanvas;
 import eu.pb4.mapcanvas.api.core.DrawableCanvas;
 import eu.pb4.mapcanvas.api.core.PlayerCanvas;
@@ -10,23 +13,19 @@ import eu.pb4.mapcanvas.api.utils.CanvasUtils;
 import io.github.haykam821.compound.game.board.tile.TileCanvasMap;
 import io.github.haykam821.compound.game.board.tile.TilePos;
 import io.github.haykam821.compound.game.board.tile.TileReducer;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.random.Random;
 
 public class Board {
-	private static final int RENDER_SCALE = FilledMapItem.field_30907;
+	private static final int RENDER_SCALE = MapItem.IMAGE_WIDTH;
 
 	private final BoardConfig config;
-	private final Random random;
+	private final RandomSource random;
 
 	private final BoardGrid grid;
 	private int score = 0;
 
 	private final CombinedPlayerCanvas canvas;
 
-	public Board(BoardConfig config, Random random) {
+	public Board(BoardConfig config, RandomSource random) {
 		this.config = config;
 		this.random = random;
 
@@ -45,7 +44,7 @@ public class Board {
 	}
 
 	private void spawnTile() {
-		Optional<Long> maybeValue = this.config.spawns().getDataOrEmpty(random);
+		Optional<Long> maybeValue = this.config.spawns().getRandom(random);
 
 		if (maybeValue.isPresent()) {
 			this.grid.setRandomEmpty(maybeValue.get(), this.random);
@@ -126,9 +125,9 @@ public class Board {
 		return new BlockPos(x, y, 0);
 	}
 
-	public Vec3d getSpawnPos() {
+	public Vec3 getSpawnPos() {
 		BlockPos displayPos = this.getDisplayPos();
-		return new Vec3d(displayPos.getX() / 2d, (displayPos.getY() + 1) / 2d, (displayPos.getY()) * -1.2);
+		return new Vec3(displayPos.getX() / 2d, (displayPos.getY() + 1) / 2d, (displayPos.getY()) * -1.2);
 	}
 
 	public int getSpawnAngle() {

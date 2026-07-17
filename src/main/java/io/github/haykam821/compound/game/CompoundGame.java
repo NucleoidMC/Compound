@@ -4,29 +4,25 @@ import eu.pb4.mapcanvas.api.utils.VirtualDisplay;
 import io.github.haykam821.compound.game.board.Board;
 import io.github.haykam821.compound.game.board.BoardChange;
 import io.github.haykam821.compound.game.board.SlideDirection;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityPose;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.GameMode;
-import xyz.nucleoid.fantasy.RuntimeWorldConfig;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.Vec3;
+import xyz.nucleoid.fantasy.RuntimeLevelConfig;
 import xyz.nucleoid.fantasy.util.VoidChunkGenerator;
 import xyz.nucleoid.plasmid.api.game.GameActivity;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
@@ -47,19 +43,19 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.Destroy, GameActivityEvents.Tick, GamePlayerEvents.Remove, GamePlayerEvents.Accept, GamePlayerEvents.Offer, PlayerDamageEvent, PlayerDeathEvent {
 	private final GameSpace gameSpace;
-	private final ServerWorld world;
+	private final ServerLevel world;
 	private final CompoundConfig config;
 
 	private final Board board;
 	private final ScoreBar bar;
 	private final VirtualDisplay display;
 
-	private ServerPlayerEntity mainPlayer;
+	private ServerPlayer mainPlayer;
 	private SlideDirection lastSlideDirection;
 
 	private int ticksUntilClose = -1;
 
-	public CompoundGame(GameSpace gameSpace, ServerWorld world, CompoundConfig config, Board board, GlobalWidgets widgets, VirtualDisplay display) {
+	public CompoundGame(GameSpace gameSpace, ServerLevel world, CompoundConfig config, Board board, GlobalWidgets widgets, VirtualDisplay display) {
 		this.gameSpace = gameSpace;
 		this.world = world;
 		this.config = config;
@@ -94,12 +90,12 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 
 	public static GameOpenProcedure open(GameOpenContext<CompoundConfig> context) {
 		CompoundConfig config = context.config();
-		Board board = new Board(config.boardConfig(), Random.createLocal());
+		Board board = new Board(config.boardConfig(), RandomSource.createThreadLocalInstance());
 
-		RuntimeWorldConfig worldConfig = new RuntimeWorldConfig()
-			.setGenerator(new VoidChunkGenerator(context.server().getRegistryManager().getOrThrow(RegistryKeys.BIOME)));
+		RuntimeLevelConfig worldConfig = new RuntimeLevelConfig()
+			.setGenerator(new VoidChunkGenerator(context.server().registryAccess().lookupOrThrow(Registries.BIOME)));
 
-		return context.openWithWorld(worldConfig, (activity, world) -> {
+		return context.openWithLevel(worldConfig, (activity, world) -> {
 			board.render();
 
 			GlobalWidgets widgets = GlobalWidgets.addTo(activity);
@@ -124,7 +120,7 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 
 	// Listeners
 	@Override
-	public void onAddPlayer(ServerPlayerEntity player) {
+	public void onAddPlayer(ServerPlayer player) {
 		this.display.addPlayer(player);
 		this.display.getCanvas().addPlayer(player);
 	}
@@ -178,21 +174,21 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 	@Override
 	public JoinAcceptorResult onAcceptPlayers(JoinAcceptor acceptor) {
 		if (this.mainPlayer == null) {
-			Vec3d spawnPos = this.board.getSpawnPos();
+			Vec3 spawnPos = this.board.getSpawnPos();
 
 			return acceptor.teleport(this.world, spawnPos).thenRunForEach(player -> {
 				this.mainPlayer = player;
 
 				this.spawnMount(spawnPos, this.mainPlayer);
-				this.initializePlayer(this.mainPlayer, GameMode.ADVENTURE);
+				this.initializePlayer(this.mainPlayer, GameType.ADVENTURE);
 			});
 		} else {
-			Vec3d pos = this.mainPlayer.getPos().add(this.config.spectatorSpawnOffset());
+			Vec3 pos = this.mainPlayer.position().add(this.config.spectatorSpawnOffset());
 			return acceptor.teleport(this.world, pos).thenRunForEach(player -> {
-				player.setYaw(this.mainPlayer.getYaw());
-				player.setPitch(this.mainPlayer.getPitch());
+				player.setYRot(this.mainPlayer.getYRot());
+				player.setXRot(this.mainPlayer.getXRot());
 
-				this.initializePlayer(player, GameMode.SPECTATOR);
+				this.initializePlayer(player, GameType.SPECTATOR);
 			});
 		}
 	}
@@ -203,12 +199,12 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 	}
 
 	@Override
-	public EventResult onDamage(ServerPlayerEntity player, DamageSource source, float damage) {
+	public EventResult onDamage(ServerPlayer player, DamageSource source, float damage) {
 		return EventResult.DENY;
 	}
 
 	@Override
-	public EventResult onDeath(ServerPlayerEntity player, DamageSource source) {
+	public EventResult onDeath(ServerPlayer player, DamageSource source) {
 		if (player == this.mainPlayer) {
 			this.endGame();
 		}
@@ -216,7 +212,7 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 	}
 
 	@Override
-	public void onRemovePlayer(ServerPlayerEntity player) {
+	public void onRemovePlayer(ServerPlayer player) {
 		this.display.removePlayer(player);
 		this.display.getCanvas().removePlayer(player);
 
@@ -227,48 +223,48 @@ public class CompoundGame implements GamePlayerEvents.Add, GameActivityEvents.De
 
 	// Utilities
 	private void sendSound(SoundEvent sound) {
-		this.gameSpace.getPlayers().playSound(sound, SoundCategory.PLAYERS, this.config.soundConfig().volume(), this.config.soundConfig().pitch());
+		this.gameSpace.getPlayers().playSound(sound, SoundSource.PLAYERS, this.config.soundConfig().volume(), this.config.soundConfig().pitch());
 	}
 
-	private Entity spawnMount(Vec3d playerPos, ServerPlayerEntity player) {
-		MobEntity mount = EntityType.MULE.create(this.world, SpawnReason.JOCKEY);
+	private Entity spawnMount(Vec3 playerPos, ServerPlayer player) {
+		Mob mount = EntityTypes.MULE.create(this.world, EntitySpawnReason.JOCKEY);
 
-		double y = playerPos.getY() - mount.getPassengerRidingPos(player).getY() - player.getEyeHeight(EntityPose.SITTING);
-		mount.setPos(playerPos.getX(), y, playerPos.getZ());
-		mount.setHeadYaw(this.board.getSpawnAngle());
-		mount.setYaw(this.board.getSpawnAngle());
+		double y = playerPos.y() - mount.getPassengerRidingPosition(player).y() - player.getEyeHeight(Pose.SITTING);
+		mount.setPosRaw(playerPos.x(), y, playerPos.z());
+		mount.setYHeadRot(this.board.getSpawnAngle());
+		mount.setYRot(this.board.getSpawnAngle());
 
-		mount.setAiDisabled(true);
+		mount.setNoAi(true);
 		mount.setNoGravity(true);
 		mount.setSilent(true);
-		mount.setPersistent();
+		mount.setPersistenceRequired();
 
 		// Prevent mount from being visible
-		mount.addStatusEffect(this.createInfiniteStatusEffect(StatusEffects.INVISIBILITY));
+		mount.addEffect(this.createInfiniteStatusEffect(MobEffects.INVISIBILITY));
 		mount.setInvisible(true);
 
 		// Remove mount hearts from HUD
-		mount.getAttributeInstance(EntityAttributes.MAX_HEALTH).setBaseValue(0);
+		mount.getAttribute(Attributes.MAX_HEALTH).setBaseValue(0);
 
-		this.world.spawnEntity(mount);
-		player.startRiding(mount, true);
+		this.world.addFreshEntity(mount);
+		player.startRiding(mount, true, false);
 
 		return null;
 	}
 
-	private void initializePlayer(ServerPlayerEntity player, GameMode gameMode) {
-		player.changeGameMode(gameMode);
-		player.addStatusEffect(this.createInfiniteStatusEffect(StatusEffects.NIGHT_VISION));
+	private void initializePlayer(ServerPlayer player, GameType gameMode) {
+		player.setGameMode(gameMode);
+		player.addEffect(this.createInfiniteStatusEffect(MobEffects.NIGHT_VISION));
 	}
 
-	private StatusEffectInstance createInfiniteStatusEffect(RegistryEntry<StatusEffect> effect) {
-		return new StatusEffectInstance(effect, StatusEffectInstance.INFINITE, 0, true, false);
+	private MobEffectInstance createInfiniteStatusEffect(Holder<MobEffect> effect) {
+		return new MobEffectInstance(effect, MobEffectInstance.INFINITE_DURATION, 0, true, false);
 	}
 
 	private void endGame() {
 		this.ticksUntilClose = this.config.ticksUntilClose();
 
-		Text message = Text.translatable("text.compound.reached_score", this.mainPlayer.getDisplayName(), this.board.getScore()).formatted(Formatting.GOLD);
+		Component message = Component.translatable("text.compound.reached_score", this.mainPlayer.getDisplayName(), this.board.getScore()).withStyle(ChatFormatting.GOLD);
 		this.gameSpace.getPlayers().sendMessage(message);
 
 		this.sendSound(this.config.soundConfig().gameEnd());

@@ -3,14 +3,13 @@ package io.github.haykam821.compound.game.board;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
+import net.minecraft.util.Util;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import io.github.haykam821.compound.game.board.tile.TilePos;
 import io.github.haykam821.compound.game.board.tile.TileReducer;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
 
 public class BoardGrid {
 	private final int width;
@@ -80,7 +79,7 @@ public class BoardGrid {
 		return positions;
 	}
 
-	public boolean setRandomEmpty(long value, Random random) {
+	public boolean setRandomEmpty(long value, RandomSource random) {
 		List<TilePos> positions = this.getEmptyPositions();
 
 		if (positions.isEmpty()) {
@@ -140,8 +139,8 @@ public class BoardGrid {
 				long value = this.get(x, y);
 
 				if (value > 0) {
-					for (Direction direction : Direction.Type.HORIZONTAL) {
-						long other = this.getBounded(x + direction.getOffsetX(), y + direction.getOffsetZ());
+					for (Direction direction : Direction.Plane.HORIZONTAL) {
+						long other = this.getBounded(x + direction.getStepX(), y + direction.getStepZ());
 
 						if (value == other) {
 							return true;

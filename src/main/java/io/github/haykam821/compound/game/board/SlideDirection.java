@@ -5,10 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Input;
 import io.github.haykam821.compound.game.board.tile.TilePos;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.PlayerInput;
 
 public enum SlideDirection {
 	UP(BoardGrid::getWidth, reversed(BoardGrid::getColumnPositions)),
@@ -37,11 +36,11 @@ public enum SlideDirection {
 		return this.positionGetter.apply(grid, iteration);
 	}
 
-	public static SlideDirection fromPlayer(ServerPlayerEntity player) {
-		return SlideDirection.fromInput(player.getPlayerInput());
+	public static SlideDirection fromPlayer(ServerPlayer player) {
+		return SlideDirection.fromInput(player.getLastClientInput());
 	}
 
-	private static SlideDirection fromInput(PlayerInput input) {
+	private static SlideDirection fromInput(Input input) {
 		if ((input.forward() || input.backward()) && (input.left() || input.right())) {
 			return SlideDirection.MULTIPLE;
 		} else if (input.forward() && !input.backward()) {

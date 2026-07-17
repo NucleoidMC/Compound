@@ -2,8 +2,7 @@ package io.github.haykam821.compound.game.board;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-
-import net.minecraft.util.collection.DataPool;
+import net.minecraft.util.random.WeightedList;
 
 public record BoardConfig(
 	int width,
@@ -12,7 +11,7 @@ public record BoardConfig(
 	int tilePadding,
 	int initialSpawnCount,
 	int slideSpawnCount,
-	DataPool<Long> spawns
+	WeightedList<Long> spawns
 ) {
 	private static final int DEFAULT_SIZE = 4;
 	private static final int DEFAULT_TILE_SIZE = 2;
@@ -20,7 +19,7 @@ public record BoardConfig(
 
 	private static final int DEFAULT_INITIAL_SPAWN_COUNT = 2;
 	private static final int DEFAULT_SLIDE_SPAWN_COUNT = 1;
-	private static final DataPool<Long> DEFAULT_SPAWNS = DataPool.<Long>builder()
+	private static final WeightedList<Long> DEFAULT_SPAWNS = WeightedList.<Long>builder()
 		.add(2l, 9)
 		.add(4l, 1)
 		.build();
@@ -33,7 +32,7 @@ public record BoardConfig(
 			Codec.INT.optionalFieldOf("tile_padding", DEFAULT_TILE_PADDING).forGetter(BoardConfig::tilePadding),
 			Codec.INT.optionalFieldOf("initial_spawn_count", DEFAULT_INITIAL_SPAWN_COUNT).forGetter(BoardConfig::initialSpawnCount),
 			Codec.INT.optionalFieldOf("slide_spawn_count", DEFAULT_SLIDE_SPAWN_COUNT).forGetter(BoardConfig::slideSpawnCount),
-			DataPool.createCodec(Codec.LONG).optionalFieldOf("spawns", DEFAULT_SPAWNS).forGetter(BoardConfig::spawns)
+			WeightedList.codec(Codec.LONG).optionalFieldOf("spawns", DEFAULT_SPAWNS).forGetter(BoardConfig::spawns)
 		).apply(instance, BoardConfig::new);
 	});
 

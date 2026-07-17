@@ -2,9 +2,8 @@ package io.github.haykam821.compound.game;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 
 public record SoundConfig(
 	float volume,
@@ -17,11 +16,11 @@ public record SoundConfig(
 		return instance.group(
 			Codec.FLOAT.fieldOf("volume").forGetter(SoundConfig::volume),
 			Codec.FLOAT.fieldOf("pitch").forGetter(SoundConfig::pitch),
-			SoundEvent.CODEC.fieldOf("slide").forGetter(SoundConfig::slide),
-			SoundEvent.CODEC.fieldOf("merge").forGetter(SoundConfig::merge),
-			SoundEvent.CODEC.fieldOf("game_end").forGetter(SoundConfig::gameEnd)
+			SoundEvent.DIRECT_CODEC.fieldOf("slide").forGetter(SoundConfig::slide),
+			SoundEvent.DIRECT_CODEC.fieldOf("merge").forGetter(SoundConfig::merge),
+			SoundEvent.DIRECT_CODEC.fieldOf("game_end").forGetter(SoundConfig::gameEnd)
 		).apply(instance, SoundConfig::new);
 	});
 
-	public static final SoundConfig DEFAULT = new SoundConfig(0.5f, 1f, SoundEvents.UI_TOAST_OUT, SoundEvents.BLOCK_COMPOSTER_FILL_SUCCESS, SoundEvents.ENTITY_CREEPER_DEATH);
+	public static final SoundConfig DEFAULT = new SoundConfig(0.5f, 1f, SoundEvents.UI_TOAST_OUT, SoundEvents.COMPOSTER_FILL_SUCCESS, SoundEvents.CREEPER_DEATH);
 }
